@@ -1,0 +1,29 @@
+version: '3'
+
+services:
+  db:
+    image: postgres
+  redis:
+    image: "redis:alpine"
+  server:
+    working_dir: /code
+    build: server
+    command: bash -c "python manage.py migrate --noinput && python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - ./server/controlserver:/code
+    stdin_open: true
+    tty: true
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+      - db
+  celery:
+    volumes:
+      - ./server/controlserver:/code
+    working_dir: /code
+    build: server
+    command: celery worker -A controlserver -l info
+    depends_on:
+      - db
+      - redis
